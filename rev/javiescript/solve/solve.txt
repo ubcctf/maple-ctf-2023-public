@@ -1,0 +1,3 @@
+__proto__={"one":"NaN","two":[null],"three":"_are_a_mId_FruiT}"}
+
+maple{baNannnnas_are_a_mId_FruiT}

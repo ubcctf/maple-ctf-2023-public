@@ -1,0 +1,14 @@
+* mapledb
+
+** Build
+#+begin_example
+nix build . && cp ./result/db ./dist
+#+end_example
+
+This will produce ~/result/db~ and ~./result/db.dbg~.
+
+** Run
+#+begin_example
+docker build -t mapledb
+docker run -p 8080:8080 --rm mapledb
+#+end_example

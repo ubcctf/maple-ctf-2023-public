@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>madness</title>
+</head>
+<body>
+<main>
+    <!-- This background is adapted directly from https://www.gjtorikian.com/Earthbound-Battle-Backgrounds-JS .-->
+    <canvas
+        id=""
+        class="center"
+        data-layer-one="55"
+        data-layer-two="300"
+        data-aspect-ratio="0"
+        width="256"
+        height="224"
+    ></canvas>
+    <script src="{{ url_for('static',filename='index.js') }}"></script>
+
+<p>{{ text }}</p>
+
+<img src="data:image/png;base64,{{ image }}"/>
+
+<input type="text" id="input"/>
+<button onclick="window.location.href = window.location.origin + '/submit?value=' + document.getElementById('input').value">submit</button>
+
+<style>
+canvas {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+body {
+}
+main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+p {
+    color: white;
+    font-size: 1.5em;
+}
+img {
+    width: 40%;
+    height: 40%;
+    padding: 20px;
+}
+input {
+    width: 600px;
+    margin-bottom: 20px;
+}
+button {
+    width: 100px;
+    height: 50px;
+}
+</style>
+
+</main>
+</body>
+</html>

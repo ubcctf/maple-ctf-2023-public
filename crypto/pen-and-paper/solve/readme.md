@@ -1,0 +1,1 @@
+A manual cryptanalysis tool created by Robert Xiao (nneonneo). See https://www.youtube.com/watch?v=geQg2QJs_Qk for more information. 

@@ -1,0 +1,135 @@
+* tetrominobot
+You can call yourself an AI engineer after this one
+
+** Details
+The program allows the player to create little tetris bots. minus pwn, the intention would be to get
+the highest-scoring bot. This would make for a fun misc or koth chall if there's time.
+
+The player gets:
+1. a binary
+2. a player manual
+3. an example program that clears a few lines and dies
+4. libc
+
+** Language
+The language is meant to be simple; basically a block of C-like code that is run in a loop. In this
+code, you have access to:
+- a set of predefined variables
+- a set of predefined game functions
+- if statements
+- a small chunk of memory for counters or whatever the player wants
+- maybe macros if I have the time
+
+There won't be loops beyond the outer loop, but workarounds using counters are possible. The full
+grammar is in the player manual.
+
+** Exploit
+
+It might suffice to do either bug 1 or bug 2 interchangably (1 probably being more useful; 2 is
+mostly there because having a t-spin leak is funny). 3 should be mandatory.
+
+*** optional bug: srand (piece generator) control
+Intentionally lazy rng so the player can get deterministic and known pieces with a little
+effort. makes bugs 1+2 a lot easier.
+- Before running the bot we call srand(x) where x is a small unsigned number that is the sum of all
+  bytes in the player input
+- The parser stops at an EOF character and so the user can put whatever they like after one.
+- Like in the real game, pieces are repeatedly drawn from a bag of 7, so this just controls the
+  permutations (the player can't just ask for I pieces). however it makes things much easier to
+  programmatically generate the after-eof garbage and get the same sequence of pieces every time, no
+  matter what they are.
+
+I'll use this bug for now to try and make intended bugs more attractive than any unintended ones.
+however, it would make for an interesting challenge to use real randomness.
+
+*** bug 1: libc leak through the ceiling
+- Like in the real game, pieces existing above the visible board does not kill you
+  - you die when a new piece can't spawn (usually in the top-middle of the board)
+- An address or some other interesting data is stored above the board in memory
+  - libc? address of game memory for a ropchain?
+- Piece movement functions return 0 for success or a number describing what the piece ran into
+- Like in the real game, there is no "move up" function, but if you are rotating a piece close to
+  some obstacles, there is a bunch of "kick" positions that are tried, and many of these positions
+  bump the rotated piece up
+
+illustration (i am at the mercy of where gcc decides to put things, but this has been stable so far)
+
+#+begin_src
+
+
+            unhelpful data    | libc *  |         | libc *  |
+          (currently all zero)| stdout  |         | stdin   |
+          +----+----+----+----+----+----+----+----+----+----+
+ROW -2    |    |    |    |    |XXXX|XXXX|    |    |XXXX|XXXX|
+          |    |    |    |    |XXXX|XXXX|    |    |XXXX|XXXX|
+          +----+----+----+----+----+----+----+----+----+----+
+
+                    | libc *  |     completed.0
+                    | stderr  |     (24 bytes)
+          +----+----+----+----+----+----+----+----+----+----+
+ROW -1    |    |    |XXXX|XXXX|    |    |    |    |    |    |
+          |    |    |XXXX|XXXX|    |    |    |    |    |    |
+          +----+----+----+----+----+----+----+----+----+----+
+
+          +----+----+----+----+----+----+----+----+----+----+
+ROW 0     |   real board here...                            |
+
+#+end_src
+
+
+*** bug 2: base addr leak with a t-spin
+- the score delta when clearing n lines is array[n] where array is 4 constant ints stored on the
+  stack
+- t-spins generally give a player more points than the raw amount of lines cleared
+  - this is when the piece dropped was a T and the T is "under" some existing pieces
+- it is possible to clear 1, 2, or 3 lines with a t-spin
+- have the can't-move-T-up check set n=3 (maybe 4? maybe long ints?). Then have the line clearing
+  check increment it with additional lines cleared
+- score will increment by whatever interesting data lies after the array. player can access the
+  score in their bot.
+
+decided to go with 2 lines good enough for a leak. i don't even know how to do a t-spin triple lol
+
+*** bug 3: arbitrary call using bad debug mode and buggy cmdline arg parser
+- bot name can be entered through argv, or through an initial fgets if not found.
+  - Debug mode can only be enabled thru argv
+  - everything is put together, so any bot name starting with - and containing d enables debug
+- debug mode allows for an extra game function and adds it to the end of the game function table in
+  the null spot
+  - where the null spot was previously used as the end indicator
+- the player-writable memory is allocated right after the gfunctable
+- gfunctable is a record of char *name and func *s
+- player will need to
+  - call a predetermined string in the program
+  - find the pointer (hard) to this string and put this in mem[0] (easy)
+  - find a pointer (hard) to whatever they'd like and write it to mem[1] (easy)
+  - probably write a rop chain? onegadget might be possible, don't really have time to check
+- This is all made easier by the fact the player can re-run the program with a different bot until
+  they quit or things segfault.
+
+this seems convoluted but i'm imagining it would be pretty easy to be suspicious of the f*table and
+the player memory being so close together. i just need to make sure this doesn't open up any boring
+ways of finding good addresses (please use the ceiling bug and/or the t-spin bug)
+
+
+e.g. this will segfault in debug mode:
+
+~{ mem[0] = 123; mem[1] = 0; call(nonexistent_function) }~
+
+
+** flag
+- maple{we_use_99%_fewer_CPU_cycles_than_competing_apps!}
+
+** todo
+in descending order of importance
+
+- piece timeout?
+- ask people to debug cmdline args
+- test game functions
+
+** building
+
+~make handouts~ should build a correct docker image and run ~make~ there, copying the outputs to
+out/handout.
+
+~make tx~ is for my own setup.

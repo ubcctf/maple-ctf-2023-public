@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/editTextInput"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:hint="Enter text"
+        android:gravity="top"
+        android:scrollbars="vertical"
+        android:inputType="textMultiLine" />
+
+    <Button
+        android:id="@+id/buttonConvert"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Convert to Uppercase" />
+
+    <TextView
+        android:id="@+id/textViewOutput"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="" />
+</LinearLayout>

